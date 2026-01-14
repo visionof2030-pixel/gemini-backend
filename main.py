@@ -1,9 +1,14 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import os
 import google.generativeai as genai
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+api_key = os.environ.get("GEMINI_API_KEY")
+
+if not api_key:
+    raise RuntimeError("GEMINI_API_KEY is missing")
+
+genai.configure(api_key=api_key)
 
 app = FastAPI()
 
@@ -12,6 +17,9 @@ class Req(BaseModel):
 
 @app.post("/ask")
 def ask(req: Req):
-    model = genai.GenerativeModel("gemini-pro")
-    r = model.generate_content(req.prompt)
-    return {"answer": r.text}
+    try:
+        model = genai.GenerativeModel("gemini-pro")
+        response = model.generate_content(req.prompt)
+        return {"answer": response.text}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
