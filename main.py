@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
 import google.generativeai as genai
@@ -11,6 +12,15 @@ if not api_key:
 genai.configure(api_key=api_key)
 
 app = FastAPI()
+
+# ✅ CORS (الحل الأساسي)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Req(BaseModel):
     prompt: str
