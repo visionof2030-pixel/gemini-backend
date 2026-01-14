@@ -18,7 +18,7 @@ class Req(BaseModel):
 @app.post("/ask")
 def ask(req: Req):
     try:
-        model = genai.GenerativeModel("gemini-pro")
+        model = genai.GenerativeModel("models/gemini-2.5-flash-lite")
         response = model.generate_content(req.prompt)
         return {"answer": response.text}
     except Exception as e:
