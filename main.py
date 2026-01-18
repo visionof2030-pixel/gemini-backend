@@ -2,18 +2,31 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import os
+import itertools
 import google.generativeai as genai
 
-api_key = os.environ.get("GEMINI_API_KEY")
+api_keys = [
+    os.getenv("GEMINI_API_KEY_1"),
+    os.getenv("GEMINI_API_KEY_2"),
+    os.getenv("GEMINI_API_KEY_3"),
+    os.getenv("GEMINI_API_KEY_4"),
+    os.getenv("GEMINI_API_KEY_5"),
+    os.getenv("GEMINI_API_KEY_6"),
+    os.getenv("GEMINI_API_KEY_7"),
+]
 
-if not api_key:
-    raise RuntimeError("GEMINI_API_KEY is missing")
+api_keys = [k for k in api_keys if k]
 
-genai.configure(api_key=api_key)
+if not api_keys:
+    raise RuntimeError("No GEMINI API KEYS found")
+
+key_cycle = itertools.cycle(api_keys)
+
+def get_api_key():
+    return next(key_cycle)
 
 app = FastAPI()
 
-# ✅ CORS (الحل الأساسي)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -25,10 +38,15 @@ app.add_middleware(
 class Req(BaseModel):
     prompt: str
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.post("/ask")
 def ask(req: Req):
     try:
-        model = genai.GenerativeModel("models/gemini-2.5-flash-lite")
+        genai.configure(api_key=get_api_key())
+        model = genai.GenerativeModel("models/gemini-1.5-flash")
         response = model.generate_content(req.prompt)
         return {"answer": response.text}
     except Exception as e:
