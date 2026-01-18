@@ -5,9 +5,6 @@ import os
 import itertools
 import google.generativeai as genai
 
-class AskRequest(BaseModel):
-    prompt: str
-
 app = FastAPI()
 
 app.add_middleware(
@@ -17,6 +14,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+class Req(BaseModel):
+    prompt: str
 
 api_keys = [
     os.getenv("GEMINI_API_KEY_1"),
@@ -43,11 +43,15 @@ def health():
     return {"status": "ok"}
 
 @app.post("/ask")
-async def ask(req: AskRequest):
+def ask(req: Req):
     try:
         genai.configure(api_key=get_api_key())
-        model = genai.GenerativeModel("models/gemini-1.5-flash")
+
+        model = genai.GenerativeModel("models/gemini-2.5-flash-lite")
+
         response = model.generate_content(req.prompt)
+
         return {"answer": response.text}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
