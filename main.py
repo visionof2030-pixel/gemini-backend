@@ -1,8 +1,12 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import os
 import itertools
 import google.generativeai as genai
+
+class AskRequest(BaseModel):
+    prompt: str
 
 app = FastAPI()
 
@@ -39,28 +43,11 @@ def health():
     return {"status": "ok"}
 
 @app.post("/ask")
-async def ask(request: Request):
+async def ask(req: AskRequest):
     try:
-        try:
-            data = await request.json()
-        except:
-            data = {}
-
-        prompt = (
-            data.get("prompt")
-            or data.get("text")
-            or data.get("message")
-            or data.get("q")
-        )
-
-        if not prompt:
-            return {"error": "no prompt received"}
-
         genai.configure(api_key=get_api_key())
         model = genai.GenerativeModel("models/gemini-1.5-flash")
-        response = model.generate_content(prompt)
-
+        response = model.generate_content(req.prompt)
         return {"answer": response.text}
-
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
